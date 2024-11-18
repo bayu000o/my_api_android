@@ -29,10 +29,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     "status" => "success",
                     "message" => "Berhasil login",
                     "user" => [
-                        "id" => $user['id'],
-                        "name" => $user['username'],
+                        "id" => $user['id_user'],                       
                         "email" => $user['email'],
-                        "level" => $user['level'],
+                        "name" => $user['username'],
+                        "no_telp" => $user['no_telp'],
                         "bank" => $user['bank']
                     ]
                 ];

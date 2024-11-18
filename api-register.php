@@ -14,7 +14,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $nama = $input['username'];
         $email = $input['email'];
         $password = password_hash($input['password'], PASSWORD_BCRYPT);
-        $level = "user";
         $bank = $input['bank'];
 
         // Validasi pilihan bank
@@ -24,37 +23,61 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 "message" => "Bank yang dipilih tidak valid. Pilih antara: " . implode(", ", $allowedBanks)
             ];
         } else {
-            // Buat query untuk menyimpan data pengguna ke dalam tabel
-            $sql = "INSERT INTO user (username, email, password, level, bank) VALUES (?, ?, ?, ?, ?)";
-            $stmt = $koneksi->prepare($sql);
+            // Ambil nomor telepon dari database berdasarkan email
+            $query = "SELECT no_telp FROM user WHERE email = ?";
+            $stmt = $koneksi->prepare($query);
 
             if ($stmt) {
-                // Bind parameter dan eksekusi query
-                $stmt->bind_param("sssss", $nama, $email, $password, $level, $bank);
+                $stmt->bind_param("s", $email);
                 $stmt->execute();
+                $stmt->bind_result($no_telp);
+                $stmt->fetch();
+                $stmt->close();
 
-                if ($stmt->affected_rows > 0) {
-                    $user_id = $koneksi->insert_id;
-                    $response['data'] = [
-                        "status" => "success",
-                        "message" => "Registrasi Berhasil",
-                        "user" => [
-                            "id" => $user_id,
-                            "username" => $nama,
-                            "email" => $email,
-                            "level" => $level,
-                            "bank" => $bank
-                        ]
-                    ];
-                } else {
+                if (empty($no_telp)) {
                     $response = [
                         "status" => "error",
-                        "message" => "Gagal mendaftar, coba lagi."
+                        "message" => "Nomor telepon tidak ditemukan untuk email yang diberikan."
                     ];
+                } else {
+                    // Buat query untuk menyimpan data pengguna ke dalam tabel
+                    $sql = "INSERT INTO user (username, email, password, no_telp, bank) VALUES (?, ?, ?, ?, ?)";
+                    $stmt = $koneksi->prepare($sql);
+
+                    if ($stmt) {
+                        // Bind parameter dan eksekusi query
+                        $stmt->bind_param("sssss", $nama, $email, $password, $no_telp, $bank);
+                        $stmt->execute();
+
+                        if ($stmt->affected_rows > 0) {
+                            $user_id = $koneksi->insert_id;
+                            $response['data'] = [
+                                "status" => "success",
+                                "message" => "Registrasi Berhasil",
+                                "user" => [
+                                    "id" => $user_id,
+                                    "username" => $nama,
+                                    "email" => $email,
+                                    "no_telp" => $no_telp,
+                                    "bank" => $bank
+                                ]
+                            ];
+                        } else {
+                            $response = [
+                                "status" => "error",
+                                "message" => "Gagal mendaftar, coba lagi."
+                            ];
+                        }
+                        $stmt->close();
+                    } else {
+                        // Jika statement gagal dipersiapkan
+                        $response = [
+                            "status" => "error",
+                            "message" => "Kesalahan pada server."
+                        ];
+                    }
                 }
-                $stmt->close();
             } else {
-                // Jika statement gagal dipersiapkan
                 $response = [
                     "status" => "error",
                     "message" => "Kesalahan pada server."
