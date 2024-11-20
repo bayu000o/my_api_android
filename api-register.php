@@ -41,12 +41,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     ];
                 } else {
                     // Buat query untuk menyimpan data pengguna ke dalam tabel
-                    $sql = "INSERT INTO user (username, email, password, no_telp, bank) VALUES (?, ?, ?, ?, ?)";
+                    $sql = "INSERT INTO user (email, username, password, no_telp, bank) VALUES (?, ?, ?, ?, ?)";
                     $stmt = $koneksi->prepare($sql);
 
                     if ($stmt) {
                         // Bind parameter dan eksekusi query
-                        $stmt->bind_param("sssss", $nama, $email, $password, $no_telp, $bank);
+                        $stmt->bind_param("sssss", $email, $nama, $password, $no_telp, $bank);
                         $stmt->execute();
 
                         if ($stmt->affected_rows > 0) {
@@ -55,9 +55,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                 "status" => "success",
                                 "message" => "Registrasi Berhasil",
                                 "user" => [
-                                    "id" => $user_id,
-                                    "username" => $nama,
+                                    "id" => $user_id,                                    
                                     "email" => $email,
+                                    "username" => $nama,
                                     "no_telp" => $no_telp,
                                     "bank" => $bank
                                 ]

@@ -7,16 +7,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Ambil data JSON dari body
     $input = json_decode(file_get_contents("php://input"), true);
 
-    // Cek apakah "email" dan "password" ada dalam request
+    // Pastikan email dan password ada dalam input
     if (isset($input['email']) && isset($input['password'])) {
         $email = $input['email'];
         $password = md5($input['password']); // Hash password dengan MD5
 
-        // Buat query untuk mencari pengguna berdasarkan email dan password
+        // Query untuk mencari pengguna berdasarkan email dan password
         $sql = "SELECT * FROM user WHERE email = ? AND password = ?";
         $stmt = $koneksi->prepare($sql);
 
-        if ($stmt) { // Pastikan $stmt berhasil dibuat
+        if ($stmt) {
             $stmt->bind_param("ss", $email, $password);
             $stmt->execute();
             $result = $stmt->get_result();
@@ -44,17 +44,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 ];
             }
 
-            // Tutup statement
             $stmt->close();
         } else {
-            // Jika statement tidak bisa dipersiapkan
             $response = [
                 "status" => "error",
                 "message" => "Kesalahan pada server. Tidak bisa memproses permintaan."
             ];
         }
     } else {
-        // Jika email atau password tidak dikirim dalam request
         $response = [
             "status" => "error",
             "message" => "Email dan password harus disertakan"
@@ -66,6 +63,5 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     echo json_encode($response);
 }
 
-// Tutup koneksi jika terhubung
 $koneksi->close();
 ?>
