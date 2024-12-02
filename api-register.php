@@ -2,93 +2,78 @@
 // Sertakan file konfigurasi koneksi database
 require 'koneksi.php';
 
-// Daftar bank yang diperbolehkan
-$allowedBanks = ["Mandiri", "BCA", "BRI", "BNI", "CIMB", "Permata"];
-
+// Periksa apakah request adalah POST
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // Ambil data JSON dari body
     $input = json_decode(file_get_contents("php://input"), true);
 
-    // Cek apakah "username", "email", "password", dan "bank" ada dalam request
-    if (isset($input['username']) && isset($input['email']) && isset($input['password']) && isset($input['bank'])) {
-        $nama = $input['username'];
+    // Pastikan semua data yang dibutuhkan ada dalam input
+    if (isset($input['email']) && isset($input['username']) && isset($input['password']) && isset($input['no_telp'])) {
         $email = $input['email'];
-        $password = password_hash($input['password'], PASSWORD_BCRYPT);
-        $bank = $input['bank'];
+        $username = $input['username'];
+        $password = $input['password']; // Pastikan password di-hash sebelum disimpan
+        $no_telp = $input['no_telp'];
 
-        // Validasi pilihan bank
-        if (!in_array($bank, $allowedBanks)) {
-            $response = [
-                "status" => "error",
-                "message" => "Bank yang dipilih tidak valid. Pilih antara: " . implode(", ", $allowedBanks)
-            ];
-        } else {
-            // Ambil nomor telepon dari database berdasarkan email
-            $query = "SELECT no_telp FROM user WHERE email = ?";
-            $stmt = $koneksi->prepare($query);
+        // Cek apakah email sudah terdaftar
+        $checkEmailQuery = "SELECT * FROM user WHERE email = ?";
+        $stmt = $koneksi->prepare($checkEmailQuery);
 
-            if ($stmt) {
-                $stmt->bind_param("s", $email);
-                $stmt->execute();
-                $stmt->bind_result($no_telp);
-                $stmt->fetch();
-                $stmt->close();
+        if ($stmt) {
+            $stmt->bind_param("s", $email);
+            $stmt->execute();
+            $result = $stmt->get_result();
 
-                if (empty($no_telp)) {
-                    $response = [
-                        "status" => "error",
-                        "message" => "Nomor telepon tidak ditemukan untuk email yang diberikan."
-                    ];
-                } else {
-                    // Buat query untuk menyimpan data pengguna ke dalam tabel
-                    $sql = "INSERT INTO user (email, username, password, no_telp, bank) VALUES (?, ?, ?, ?, ?)";
-                    $stmt = $koneksi->prepare($sql);
-
-                    if ($stmt) {
-                        // Bind parameter dan eksekusi query
-                        $stmt->bind_param("sssss", $email, $nama, $password, $no_telp, $bank);
-                        $stmt->execute();
-
-                        if ($stmt->affected_rows > 0) {
-                            $user_id = $koneksi->insert_id;
-                            $response['data'] = [
-                                "status" => "success",
-                                "message" => "Registrasi Berhasil",
-                                "user" => [
-                                    "id" => $user_id,                                    
-                                    "email" => $email,
-                                    "username" => $nama,
-                                    "no_telp" => $no_telp,
-                                    "bank" => $bank
-                                ]
-                            ];
-                        } else {
-                            $response = [
-                                "status" => "error",
-                                "message" => "Gagal mendaftar, coba lagi."
-                            ];
-                        }
-                        $stmt->close();
-                    } else {
-                        // Jika statement gagal dipersiapkan
-                        $response = [
-                            "status" => "error",
-                            "message" => "Kesalahan pada server."
-                        ];
-                    }
-                }
-            } else {
+            if ($result->num_rows > 0) {
+                // Jika email sudah ada
                 $response = [
                     "status" => "error",
-                    "message" => "Kesalahan pada server."
+                    "message" => "Email sudah terdaftar"
                 ];
+            } else {
+                // Jika email belum ada, simpan data ke database
+                $insertQuery = "INSERT INTO user (email, username, password, no_telp) VALUES (?, ?, ?, ?)";
+                $stmt = $koneksi->prepare($insertQuery);
+
+                if ($stmt) {
+                    $hashedPassword =password_hash($password, PASSWORD_BCRYPT); // Ganti dengan hashing yang lebih aman seperti bcrypt di produksi
+                    $stmt->bind_param("ssss", $email, $username, $hashedPassword, $no_telp);
+
+                    if ($stmt->execute()) {
+                        $response = [
+                            "status" => "success",
+                            "message" => "Registrasi berhasil",
+                            "user" => [
+                                "id_user" => $stmt->insert_id,
+                                "email" => $email,
+                                "username" => $username,
+                                "no_telp" => $no_telp
+                            ]
+                        ];
+                    } else {
+                        $response = [
+                            "status" => "error",
+                            "message" => "Gagal menyimpan data ke database"
+                        ];
+                    }
+
+                    $stmt->close();
+                } else {
+                    $response = [
+                        "status" => "error",
+                        "message" => "Kesalahan pada server. Tidak bisa memproses permintaan."
+                    ];
+                }
             }
+        } else {
+            $response = [
+                "status" => "error",
+                "message" => "Kesalahan pada server saat memeriksa email."
+            ];
         }
     } else {
-        // Jika data tidak lengkap
         $response = [
             "status" => "error",
-            "message" => "Nama, email, password, dan bank harus disertakan"
+            "message" => "Semua data (email, password, username, no_telp) harus disertakan"
         ];
     }
 
@@ -97,6 +82,5 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     echo json_encode($response);
 }
 
-// Tutup koneksi jika terhubung
 $koneksi->close();
 ?>
