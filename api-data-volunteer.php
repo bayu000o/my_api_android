@@ -5,22 +5,17 @@ require 'koneksi.php';
 // Query untuk mendapatkan data donasi beserta kategori
 $sql = "
     SELECT 
-        k.id_kegiatan,
-        k.gambar,
-        k.judul,
-        j.nama_jenis AS jenis,
-        k.target,
-        k.lokasi,
-        k.keterangan,
-        k.waktu
+        v.id_volunteer,
+        v.gambar,
+        v.judul,
+        v.kategori,
+        v.kuota,
+        v.waktu_pelaksanaan,
+        v.lokasi,
+        v.keterangan,
+        v.status
     FROM 
-        kegiatan k
-    JOIN 
-        jenis j
-    ON 
-        k.id_jenis = j.id_jenis
-    WHERE
-        j.nama_jenis = 'volunteer'
+        volunteer v
 ";
 
 $result = $koneksi->query($sql);
@@ -31,14 +26,15 @@ if ($result && $result->num_rows > 0) {
     
     while ($row = $result->fetch_assoc()) {
         $donasi_data[] = [
-            "id" => $row['id_kegiatan'],
+            "id" => $row['id_volunteer'],
             "gambar" => $row['gambar'],
             "judul" => $row['judul'],
-            "kategori" => $row['jenis'],
-            "target" => $row['target'],
+            "kategori" => $row['kategori'],
+            "kuota" => $row['kuota'],
+            "waktu" => $row['waktu_pelaksanaan'],
             "lokasi" => $row['lokasi'],
             "keterangan" => $row['keterangan'],
-            "waktu" => $row['waktu']
+            "status" => $row['status']
         ];
     }
 
