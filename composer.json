@@ -1,0 +1,17 @@
+{
+    "name": "advan/my_api_android",
+    "autoload": {
+        "psr-4": {
+            "Advan\\MyApiAndroid\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "bayu000o",
+            "email": "bayjogre@gmail.com"
+        }
+    ],
+    "require": {
+        "midtrans/midtrans-php": "^2.6"
+    }
+}
