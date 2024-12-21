@@ -50,7 +50,7 @@ try {
     } else {
         // Jika data kosong
         echo json_encode([
-            "status" => "",
+            "status" => "empty",
             "message" => "Tidak ada data donasi yang ditemukan untuk kategori 'kesehatan'",
         ]);
     }

@@ -16,7 +16,7 @@ try {
             d.keterangan,
             d.status
         FROM donasi d
-        WHERE d.kategori = 'disabilitas'  
+        WHERE d.kategori = 'difabel/disabilitas'  
     ";
 
     // Eksekusi query
@@ -50,7 +50,7 @@ try {
     } else {
         // Jika data kosong
         echo json_encode([
-            "status" => "",
+            "status" => "empty",
             "message" => "Tidak ada data donasi yang ditemukan untuk kategori 'disabilitas'",
         ]);
     }
